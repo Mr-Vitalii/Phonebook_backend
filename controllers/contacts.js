@@ -4,7 +4,6 @@ const { HttpError, ctrlWrapper } = require("../helpers");
 
 
 const getAll = async (req, res) => {
-    console.log(req.query);
     const { _id: owner } = req.user;
     const { page = 1, limit = 20, favorite } = req.query;
     const skip = (page - 1) * limit;
@@ -43,7 +42,6 @@ const updateContact = async (req, res) => {
 }
 
 const updateFavorite = async (req, res) => {
-    console.log(req.params);
     const { id } = req.params;
     const result = await Contact.findByIdAndUpdate(id, req.body, { new: true });
     if (!result) {
@@ -59,6 +57,7 @@ const removeContact = async (req, res) => {
         throw HttpError(404, "Not found");
     }
     res.json({
+        id,
         message: "Delete success"
     })
 }

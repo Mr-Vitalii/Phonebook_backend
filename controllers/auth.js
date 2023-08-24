@@ -28,6 +28,7 @@ const register = async (req, res) => {
     res.status(201).json({
         name: newUser.name,
         email: newUser.email,
+        avatarURL: newUser.avatarURL,
         subscription: newUser.subscription,
     })
 }
@@ -57,16 +58,18 @@ const login = async (req, res) => {
         "user": {
             name: user.name,
             email: user.email,
+            avatarURL: user.avatarURL,
             subscription: user.subscription
         }
     })
 }
 
 const getCurrent = async (req, res) => {
-    const { email, subscription } = req.user;
+    const { email, subscription, avatarURL, } = req.user;
 
     res.json({
         email,
+        avatarURL,
         subscription,
     })
 }
@@ -98,7 +101,7 @@ const updateAvatar = async (req, res) => {
     const avatarURL = path.join("avatars", filename);
     await User.findByIdAndUpdate(_id, { avatarURL });
 
-    res.json({
+    res.status(201).json({
         avatarURL,
     })
 }
