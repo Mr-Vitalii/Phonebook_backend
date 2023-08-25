@@ -1,16 +1,14 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
-const path = require("path");
-const fs = require("fs/promises");
 
 const { User } = require("../models/user");
+const cloudinary = require("../helpers/cloudinary");
 
 const { HttpError, ctrlWrapper } = require("../helpers");
 
 const { SECRET_KEY } = process.env;
 
-const avatarsDir = path.join(__dirname, "../", "public", "avatars");
 
 const register = async (req, res) => {
     const { email, password } = req.body;
@@ -34,7 +32,7 @@ const register = async (req, res) => {
 }
 
 const login = async (req, res) => {
-    
+
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
@@ -44,7 +42,6 @@ const login = async (req, res) => {
     if (!passwordCompare) {
         throw HttpError(401, "Email or password invalid");
     }
-    
 
     const payload = {
         id: user._id,
@@ -94,16 +91,25 @@ const logout = async (req, res) => {
 
 const updateAvatar = async (req, res) => {
     const { _id } = req.user;
-    const { path: tempUpload, originalname } = req.file;
-    const filename = `${_id}_${originalname}`;
-    const resultUpload = path.join(avatarsDir, filename);
-    await fs.rename(tempUpload, resultUpload);
-    const avatarURL = path.join("avatars", filename);
-    await User.findByIdAndUpdate(_id, { avatarURL });
 
-    res.status(201).json({
-        avatarURL,
-    })
+    const options = {
+        folder: `phonebook/userAvatar/${_id}`,
+        resource_type: "auto",
+    };
+
+    cloudinary.uploader.upload_stream(options, async (error, result) => {
+        if (error) {
+            throw HttpError(500, "Upload failed");
+        }
+        const avatarURL = result.secure_url;
+
+        if (!avatarURL) {
+            throw HttpError(500, "Upload failed");
+        }
+        await User.findByIdAndUpdate(_id, { avatarURL });
+        return res.status(200).json({ avatarURL });
+
+    }).end(req.file.buffer);
 }
 
 module.exports = {
